@@ -10,6 +10,17 @@ A sophisticated Flask application that leverages advanced prompting techniques w
 - **Fast Processing**: Uses Groq's lightning-fast `llama-3.1-8b-instant` model
 - **RESTful API**: Complete API endpoints for integration with other applications
 - **Health Monitoring**: Built-in health check endpoint for system monitoring
+- **Modular Architecture**: Clean separation of concerns with dedicated modules for prompts, summarization, and API routes
+
+## 🏗️ Architecture
+
+The application follows a modular architecture pattern for better maintainability and scalability:
+
+- **`app.py`**: Main Flask application entry point and configuration
+- **`prompts.py`**: All prompt templates and generation logic
+- **`summarizer.py`**: Core summarization logic using GROQ API
+- **`routes/api_routes.py`**: API route handlers and endpoints
+- **`templates/index.html`**: Frontend interface
 
 ## 📋 Prerequisites
 
@@ -124,14 +135,51 @@ GET /health
 ## 📁 Project Structure
 
 ```
-├── app.py                 # Main Flask application with all routes and logic
-├── requirements.txt       # Python dependencies
-├── .env                   # Environment variables (create this)
+├── app.py                     # Main Flask application entry point
+├── prompts.py                 # All prompt templates and generation logic
+├── summarizer.py              # Core logic for summarization using GROQ API
+├── routes/
+│   ├── __init__.py           # Routes package initialization
+│   └── api_routes.py         # API route handlers and endpoints
 ├── templates/
-│   └── index.html        # Frontend interface
-├── venv/                 # Virtual environment
-└── README.md            # This documentation file
+│   └── index.html            # Frontend interface
+├── requirements.txt           # Python dependencies
+├── .env                      # Environment variables (create this)
+├── .gitignore               # Git ignore file
+├── venv/                    # Virtual environment
+└── README.md               # This documentation file
 ```
+
+## 🔧 Module Documentation
+
+### `app.py`
+Main Flask application that serves as the entry point. Handles:
+- Flask app initialization and configuration
+- CORS setup
+- Blueprint registration
+- Main route serving the web interface
+
+### `prompts.py`
+Contains the `PromptGenerator` class and all prompting methods:
+- **`PromptGenerator`**: Static class with methods for each prompting technique
+- **`PROMPTING_METHODS`**: Dictionary mapping method keys to display names
+- **`count_words()`**: Utility function for word counting
+- **`validate_article()`**: Article length and content validation
+
+### `summarizer.py`
+Contains the `ResearchSummarizer` class for API interactions:
+- **`ResearchSummarizer`**: Main class for handling GROQ API calls
+- **`call_groq_api()`**: Makes HTTP requests to GROQ API
+- **`summarize_article()`**: Orchestrates the summarization process
+- **Configuration**: API URL, model selection, and request parameters
+
+### `routes/api_routes.py`
+Contains all API route handlers using Flask Blueprint:
+- **`api_bp`**: Blueprint for all API routes
+- **`/api/summarize`**: POST endpoint for article summarization
+- **`/api/prompting-methods`**: GET endpoint for available methods
+- **`/api/validate`**: POST endpoint for article validation
+- **`/health`**: GET endpoint for health checks
 
 ## 🔌 API Reference
 
@@ -215,6 +263,11 @@ GET /health
 - Input validation prevents malicious content
 - Error handling prevents information leakage
 
+### Code Organization
+- Modular architecture promotes maintainability
+- Separation of concerns improves testability
+- Blueprint pattern enables scalable route management
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -238,6 +291,7 @@ GET /health
 - Make sure you've activated the virtual environment
 - Run `pip install -r requirements.txt` again
 - Check Python version compatibility (3.7+)
+- Verify all modules are in the correct locations
 
 #### 4. "Article too short/long" error
 **Solution**:
@@ -250,6 +304,12 @@ GET /health
 - Check your Groq API usage limits
 - Implement request throttling if needed
 - Monitor API response headers for rate limit information
+
+#### 6. Module import issues
+**Solution**:
+- Ensure the `routes` directory contains `__init__.py`
+- Check that all import statements use correct relative paths
+- Verify the project structure matches the documentation
 
 ## 🚀 Deployment
 
@@ -283,14 +343,35 @@ CMD ["python", "app.py"]
 - **Response Time**: Typically 1-3 seconds for article summarization
 - **Concurrent Requests**: Flask development server handles multiple requests
 - **Memory Usage**: Minimal memory footprint
+- **Modular Design**: Improved maintainability and scalability
+
+## 🔄 Development Workflow
+
+### Adding New Prompting Methods
+1. Add the method to `prompts.py` in the `PromptGenerator` class
+2. Update the `PROMPTING_METHODS` dictionary
+3. Add the method to the `create_prompt_by_method` mapping
+4. Test the new method through the API
+
+### Extending API Functionality
+1. Add new routes to `routes/api_routes.py`
+2. Use the existing `api_bp` Blueprint
+3. Follow the established error handling patterns
+4. Update documentation as needed
+
+### Modifying Summarization Logic
+1. Update the `ResearchSummarizer` class in `summarizer.py`
+2. Maintain the existing interface for compatibility
+3. Test changes through the API endpoints
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make your changes
+3. Make your changes following the modular architecture
 4. Add tests if applicable
-5. Submit a pull request
+5. Update documentation for any new features
+6. Submit a pull request
 
 ## 📄 License
 
@@ -303,15 +384,17 @@ For issues or questions:
 2. Verify your Groq API key is valid
 3. Ensure all dependencies are installed correctly
 4. Check the application logs for detailed error messages
+5. Verify the project structure matches the documentation
 
 ## 🔗 Useful Links
 
 - [Groq API Documentation](https://console.groq.com/docs)
 - [Flask Documentation](https://flask.palletsprojects.com/)
 - [Python-dotenv Documentation](https://github.com/theskumar/python-dotenv)
+- [Flask Blueprint Documentation](https://flask.palletsprojects.com/en/2.3.x/blueprints/)
 
 ---
 
 **Happy Summarizing! 🚀**
 
-*Built with ❤️ using Flask, Groq API, and advanced AI prompting techniques.* 
+*Built with ❤️ using Flask, Groq API, and advanced AI prompting techniques with a modular architecture.* 
