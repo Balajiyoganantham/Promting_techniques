@@ -2,60 +2,50 @@
 Core summarization logic using GROQ API.
 Handles API calls and response processing for research article summarization.
 """
-
 import os
 import requests
 from datetime import datetime
 from typing import Dict, Any, Optional
-
 from prompts import PromptGenerator
-
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_groq import ChatGroq  
 
 class ResearchSummarizer:
     """Main class for research article summarization using GROQ API."""
     
     def __init__(self, api_key: Optional[str] = None):
         """Initialize the summarizer with API configuration."""
-        self.api_key = api_key or os.getenv('GROQ_API_KEY', '')
-        self.api_url = "https://api.groq.com/openai/v1/chat/completions"
+        self.api_key = os.getenv('GROQ_API_KEY', '')
         self.default_model = "llama-3.1-8b-instant"
         
-    def call_groq_api(self, prompt: str) -> Dict[str, Any]:
-        """Make API call to Groq using single model"""
+    def call_groq_api(self, prompt: str, article: str) -> Dict[str, Any]:
+        """Make API call to Groq using langchain_groq's ChatGroq"""
         if not self.api_key:
             raise ValueError("Groq API key not configured")
         
-        headers = {
-            'Authorization': f'Bearer {self.api_key}',
-            'Content-Type': 'application/json'
-        }
-        
-        payload = {
-            'model': self.default_model,
-            'messages': [
+        chat_prompt = ChatPromptTemplate.from_messages([
+            ("system", "{prompt}"),
+            ("human", "{article}"),
+        ])
+        llm = ChatGroq(
+            groq_api_key=self.api_key,
+            model_name=self.default_model,
+            temperature=0.3, #Low value for deterministic, factual summaries.
+            max_tokens=250, #Max tokens for the summary.
+            top_p=0.9, #Controls diversity of the response.
+        )
+        chain = chat_prompt | llm
+        response = chain.invoke({"prompt": prompt, "article": article})
+        summary = response.content.strip() if hasattr(response, "content") else str(response)
+        return {
+            "choices": [
                 {
-                    'role': 'user',
-                    'content': prompt
+                    "message": {
+                        "content": summary
+                    }
                 }
-            ],
-            'max_tokens': 250,
-            'temperature': 0.3,
-            'top_p': 0.9
+            ]
         }
-        
-        try:
-            response = requests.post(
-                self.api_url, 
-                headers=headers, 
-                json=payload, 
-                timeout=30
-            )
-            response.raise_for_status()
-            return response.json()
-        except requests.exceptions.RequestException as e:
-            raise Exception(f"API request failed: {str(e)}")
-        except Exception as e:
-            raise Exception(f"Unexpected error: {str(e)}")
     
     def summarize_article(self, article: str, prompting_method: str = 'zero_shot') -> Dict[str, Any]:
         """Main method to summarize research article using selected prompting method"""
@@ -68,14 +58,14 @@ class ResearchSummarizer:
         prompt = PromptGenerator.create_prompt_by_method(article, prompting_method)
         
         # Call API
-        response = self.call_groq_api(prompt)
+        response = self.call_groq_api(prompt, article)
         
         # Extract summary
         if 'choices' in response and len(response['choices']) > 0:
             summary = response['choices'][0]['message']['content'].strip()
             
-            # Validate summary length
-            summary_word_count = PromptGenerator.count_words(summary)
+           
+            summary_word_count = PromptGenerator.count_words(summary) # Validate summary length
             
             return {
                 'summary': summary,
@@ -93,5 +83,5 @@ class ResearchSummarizer:
         return PromptGenerator.validate_article(article)
     
     def count_words(self, text: str) -> int:
-        """Count words in text"""
+        #Count words in text
         return PromptGenerator.count_words(text) 

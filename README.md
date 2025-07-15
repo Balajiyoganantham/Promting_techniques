@@ -50,6 +50,8 @@ source venv/bin/activate
 ### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
+# If not already included, also install langchain-core:
+pip install langchain-core
 ```
 
 ### 4. Configure Environment Variables
@@ -169,9 +171,39 @@ Contains the `PromptGenerator` class and all prompting methods:
 ### `summarizer.py`
 Contains the `ResearchSummarizer` class for API interactions:
 - **`ResearchSummarizer`**: Main class for handling GROQ API calls
-- **`call_groq_api()`**: Makes HTTP requests to GROQ API
-- **`summarize_article()`**: Orchestrates the summarization process
-- **Configuration**: API URL, model selection, and request parameters
+- **`call_groq_api()`**: Uses LangChain's compositional API (`ChatPromptTemplate` and chaining) to interact with the GROQ LLM. The prompt template is dynamically generated based on the selected prompting method, supporting zero-shot, few-shot, and other advanced prompting techniques.
+- **`summarize_article()`**: Orchestrates the summarization process, including validation, prompt generation, and summary extraction.
+- **Configuration**: API key, model selection, and request parameters
+
+#### How it Works (LangChain Chaining Style)
+The summarizer now uses LangChain's compositional API for prompt and LLM chaining. For each summarization request:
+1. The appropriate prompt is generated using the selected prompting method (e.g., zero-shot, few-shot, etc.).
+2. A `ChatPromptTemplate` is created, with placeholders for the prompt and article.
+3. The prompt template and the LLM (`ChatGroq`) are chained using the `|` operator.
+4. The chain is invoked with the prompt and article, and the summary is extracted from the response.
+
+**Example (Python):**
+```python
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_groq import ChatGroq
+
+prompt = ChatPromptTemplate.from_messages([
+    ("system", "{prompt}"),
+    ("human", "{article}"),
+])
+llm = ChatGroq(
+    groq_api_key="YOUR_API_KEY",
+    model_name="llama-3-1-8b-instant",
+    temperature=0.3,
+    max_tokens=250,
+    top_p=0.9,
+)
+chain = prompt | llm
+response = chain.invoke({"prompt": "Your generated prompt here", "article": "Your article text here."})
+print(response.content)
+```
+
+This approach allows flexible support for all advanced prompting methods.
 
 ### `routes/api_routes.py`
 Contains all API route handlers using Flask Blueprint:
